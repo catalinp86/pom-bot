@@ -9,7 +9,7 @@ from pombot.data.pom_wars.actions import Defends
 from pombot.lib.errors import DescriptionTooLongError
 from pombot.lib.messages import send_embed_message
 from pombot.lib.pom_wars.action_chances import is_action_successful
-from pombot.lib.pom_wars.dedup_tools import check_user_add_pom
+from pombot.lib.pom_wars.common import check_user_add_pom, get_average_poms
 from pombot.lib.pom_wars.team import get_user_team
 from pombot.lib.storage import Storage
 from pombot.lib.types import ActionType
@@ -45,7 +45,10 @@ async def do_defend(ctx: Context, *args):
     action["was_successful"] = True
     await ctx.message.add_reaction(Reactions.SHIELD)
 
-    defend = Defends.get_random(team=action["team"])
+    defend = Defends.get_random(
+        team=action["team"],
+        average_daily_actions=await get_average_poms(ctx.author, timestamp),
+    )
 
     await Storage.add_pom_war_action(**action)
 

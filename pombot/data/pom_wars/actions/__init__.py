@@ -31,16 +31,39 @@ class _XMLLoader:
         ]
         # pylint: enable=c-extension-no-member
 
+    @staticmethod
+    def _get_tier_from_average_actions(average_daily_actions: Union[float, int]) -> int:
+        """Calculate a user's tier based on their average daily Pom Wars
+        actions, rather than their total number of poms.
+        """
+        for tier, criteria in {
+            1: average_daily_actions <= 3,
+            2: average_daily_actions <= 7,
+            3: average_daily_actions > 7,
+        }.items():
+            if criteria:
+                return tier
+
+        raise RuntimeError(f'No eligible tier for criteria: "{average_daily_actions=}"')
 
 class _Attacks(_XMLLoader):
-    def get_random(self, *, team: Union[str, Team], critical: bool, heavy: bool) -> Attack:
+    def get_random(
+        self,
+        *,
+        team: Union[str, Team],
+        average_daily_actions: int,
+        critical: bool,
+        heavy: bool,
+    ) -> Attack:
         """Return a random Attack from the XMLs."""
         tags = {False: _XMLTags.NORMAL_ATTACK, True: _XMLTags.HEAVY_ATTACK}
+        tier = self._get_tier_from_average_actions(average_daily_actions)
+
         choice = random.choice([
             e for e in flatten(
-                x.xpath(f".//team[@name='{team}']/{tags[heavy]}")
+                x.xpath(f".//team[@name='{team}']/tier[@level='{tier}']/{tags[heavy]}")
                 for x in self._xmls)
-            if str2bool(e.attrib.get("is_critical", "false")) == critical
+            if str2bool(e.attrib.get("critical", "false")) == critical
         ])
 
         return Attack(
@@ -51,11 +74,13 @@ class _Attacks(_XMLLoader):
 
 
 class _Defends(_XMLLoader):
-    def get_random(self, team: Union[str, Team]):
+    def get_random(self, team: Union[str, Team], average_daily_actions: int):
         """Return a random Defend from the XMLs."""
+        tier = self._get_tier_from_average_actions(average_daily_actions)
+
         choice = random.choice(
             flatten(
-                x.xpath(f".//team[@name='{team}']/{_XMLTags.DEFEND}")
+                x.xpath(f".//team[@name='{team}']/tier[@level='{tier}']/{_XMLTags.DEFEND}")
                 for x in self._xmls))
 
         return Defend(story=choice.text.strip())

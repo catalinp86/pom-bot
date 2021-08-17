@@ -117,10 +117,13 @@ class Event:
 class ActionType(str, Enum):
     """Type of an action in the actions table of the database."""
     # Tech debt: This should be moved to pombot.lib.pom_wars.types.
-    NORMAL_ATTACK = 'normal_attack'
-    HEAVY_ATTACK = 'heavy_attack'
-    DEFEND = 'defend'
-    BRIBE = 'bribe'
+    NORMAL_ATTACK = "normal_attack"
+    HEAVY_ATTACK = "heavy_attack"
+    DEFEND = "defend"
+    BRIBE = "bribe"
+
+    # PlaceHolder used in averaging.
+    PLACEHOLDER = "__placeholder_action__"
 
 
 @dataclass(frozen=True)
