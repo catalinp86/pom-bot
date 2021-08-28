@@ -37,7 +37,7 @@ async def do_create_event(ctx: Context, *args):
         await ctx.message.add_reaction(Reactions.ROBOT)
         return
 
-    if not (event_name := " ".join(name)):  # pylint: disable=superfluous-parens
+    if not (event_name := " ".join(name)):
         await ctx.reply("Please specify an event name.")
         await ctx.message.add_reaction(Reactions.ROBOT)
         return

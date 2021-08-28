@@ -4,14 +4,35 @@
 <xs:complexType name="attackType">
     <xs:simpleContent>
         <xs:extension base="xs:string">
-            <xs:attribute name="critical" type="xs:boolean" default="false"/>
+            <xs:attribute name="outcome">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:enumeration value="critical"/>
+                        <xs:enumeration value="missed"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:attribute>
+        </xs:extension>
+    </xs:simpleContent>
+</xs:complexType>
+
+<xs:complexType name="defendType">
+    <xs:simpleContent>
+        <xs:extension base="xs:string">
+            <xs:attribute name="outcome">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:enumeration value="missed"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:attribute>
         </xs:extension>
     </xs:simpleContent>
 </xs:complexType>
 
 <xs:complexType name="tierType">
     <xs:choice maxOccurs="unbounded">
-        <xs:element name="defend" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+        <xs:element name="defend" type="defendType" minOccurs="0" maxOccurs="unbounded"/>
         <xs:element name="heavy_attack" type="attackType" minOccurs="0" maxOccurs="unbounded"/>
         <xs:element name="normal_attack" type="attackType" minOccurs="0" maxOccurs="unbounded"/>
     </xs:choice>

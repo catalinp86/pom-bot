@@ -10,6 +10,7 @@
             <defend>Batting down the hatches you take the chance to reinforce your castles walls. No one will be getting in now!</defend>
             <defend>Quick thinking has always been your strongest suit. You roll out of the way of an incoming arrow and retreat into the forest to regroup.</defend>
             <defend>Taking advantage of the sunshine you go and collect wood from the forest to begin barricading your castle gate.</defend>
+            <defend outcome="missed">You failed to defend in tier 1 ¯\_(ツ)_/¯</defend>
         </tier>
         <tier level="2">
             <defend>Walking on a path in the forest, you encounter an old lady. She asks for help with her frying pan. You clean it for her and she tells you about a great spot to set up camp away from enemy patrol.</defend>
@@ -20,6 +21,7 @@
             <defend>You decide to rally your warriors to a better strategic position. You are now awaiting the enemy's next attack, relieved that you have secured the high ground.</defend>
             <defend>You expand your defenses. Archer towers are very overrated, they say. They'll come around.</defend>
             <defend>You find a few trees in the forest that have been struck by lightning and spot an opportunity. Chopping them down, you barricade the main road to your castle, making it harder for the enemy to bring heavy equipment.</defend>
+            <defend outcome="missed">You failed to defend in tier 2 ¯\_(ツ)_/¯</defend>
         </tier>
         <tier level="3">
             <defend>You learn the art of medicine from travelers out west. Your warriors now die less often, thanks to being fortified against disease and infection.</defend>
@@ -30,6 +32,7 @@
             <defend>You take clay and mud from a nearby swamp and use it to protect against those predictable fire arrows they've been using for 3 days now.</defend>
             <defend>You took some time to re-fasten the straps on your shield. You are slightly more efficient with it now.</defend>
             <defend>Your skills in masonry come in handy as you repair the city walls with bricks you craft out of clay, fortifying your defenses.</defend>
+            <defend outcome="missed">You failed to defend in tier 3 ¯\_(ツ)_/¯</defend>
         </tier>
     </team>
     <team name="Viking">
@@ -42,6 +45,7 @@
             <defend>Batting down the hatches you take the chance to reinforce your castles walls. No one will be getting in now!</defend>
             <defend>Quick thinking has always been your strongest suit. You roll out of the way of an incoming arrow and retreat into the forest to regroup.</defend>
             <defend>Taking advantage of the sunshine you go and collect wood from the forest to begin barricading your castle gate.</defend>
+            <defend outcome="missed">You failed to defend in tier 1 ¯\_(ツ)_/¯</defend>
         </tier>
         <tier level="2">
             <defend>Walking on a path in the forest, you encounter an old lady. She asks for help with her frying pan. You clean it for her and she tells you about a great spot to set up camp away from enemy patrol.</defend>
@@ -52,6 +56,7 @@
             <defend>You decide to rally your warriors to a better strategic position. You are now awaiting the enemy's next attack, relieved that you have secured the high ground.</defend>
             <defend>You expand your defenses. Archer towers are very overrated, they say. They'll come around.</defend>
             <defend>You find a few trees in the forest that have been struck by lightning and spot an opportunity. Chopping them down, you barricade the main road to your castle, making it harder for the enemy to bring heavy equipment.</defend>
+            <defend outcome="missed">You failed to defend in tier 2 ¯\_(ツ)_/¯</defend>
         </tier>
         <tier level="3">
             <defend>You learn the art of medicine from travelers out west. Your warriors now die less often, thanks to being fortified against disease and infection.</defend>
@@ -62,6 +67,7 @@
             <defend>You take clay and mud from a nearby swamp and use it to protect against those predictable fire arrows they've been using for 3 days now.</defend>
             <defend>You took some time to re-fasten the straps on your shield. You are slightly more efficient with it now.</defend>
             <defend>Your skills in masonry come in handy as you repair the city walls with bricks you craft out of clay, fortifying your defenses.</defend>
+            <defend outcome="missed">You failed to defend in tier 3 ¯\_(ツ)_/¯</defend>
         </tier>
     </team>
 </actions>

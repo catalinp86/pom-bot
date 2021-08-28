@@ -1,13 +1,16 @@
+import datetime
 import random
 from enum import Enum
 from typing import Union
 
 from lxml import etree
+import discord.user as DiscordUser
 
 from pombot.data import Locations
 from pombot.lib.pom_wars.team import Team
-from pombot.lib.pom_wars.types import Attack, Bribe, Defend
-from pombot.lib.tiny_tools import str2bool, flatten
+from pombot.lib.pom_wars.types import Attack, Bribe, Defend, Outcome
+from pombot.lib.tiny_tools import flatten
+from pombot.lib.types import User as BotUser
 
 ACTIONS_SCHEMA = Locations.POMWARS_ACTIONS_DIR / "actions.xsd"
 
@@ -46,13 +49,15 @@ class _XMLLoader:
 
         raise RuntimeError(f'No eligible tier for criteria: "{average_daily_actions=}"')
 
+
 class _Attacks(_XMLLoader):
     def get_random(
         self,
         *,
-        team: Union[str, Team],
+        timestamp: datetime,
+        team: Team,
         average_daily_actions: int,
-        critical: bool,
+        outcome: Outcome,
         heavy: bool,
     ) -> Attack:
         """Return a random Attack from the XMLs."""
@@ -60,30 +65,41 @@ class _Attacks(_XMLLoader):
         tier = self._get_tier_from_average_actions(average_daily_actions)
 
         choice = random.choice([
-            e for e in flatten(
-                x.xpath(f".//team[@name='{team}']/tier[@level='{tier}']/{tags[heavy]}")
-                for x in self._xmls)
-            if str2bool(e.attrib.get("critical", "false")) == critical
+            action for action in flatten(
+                xml.xpath(
+                    f".//team[@name='{team}']/tier[@level='{tier}']/{tags[heavy]}"
+                ) for xml in self._xmls)
+            if action.attrib.get("outcome", Outcome.REGULAR) == outcome
         ])
 
         return Attack(
+            team=team,
+            timestamp=timestamp,
             story=choice.text.strip(),
+            outcome=outcome,
             is_heavy=heavy,
-            is_critical=critical,
         )
 
 
 class _Defends(_XMLLoader):
-    def get_random(self, team: Union[str, Team], average_daily_actions: int):
+    def get_random(
+        self,
+        user: BotUser,
+        team: Team,
+        average_daily_actions: int,
+        outcome: Outcome,
+    ):
         """Return a random Defend from the XMLs."""
+        tag = _XMLTags.DEFEND
         tier = self._get_tier_from_average_actions(average_daily_actions)
 
-        choice = random.choice(
-            flatten(
-                x.xpath(f".//team[@name='{team}']/tier[@level='{tier}']/{_XMLTags.DEFEND}")
-                for x in self._xmls))
+        choice = random.choice([
+            action for action in flatten(
+                x.xpath(f".//team[@name='{team}']/tier[@level='{tier}']/{tag}")
+                for x in self._xmls)
+            if action.attrib.get("outcome", Outcome.REGULAR) == outcome])
 
-        return Defend(story=choice.text.strip())
+        return Defend(user, team, outcome, story=choice.text.strip())
 
 
 class _Bribes(_XMLLoader):

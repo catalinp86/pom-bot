@@ -11,7 +11,14 @@ from pombot.config import Pomwars
 from pombot.data import Locations
 from pombot.data.pom_wars import actions
 from pombot.lib.pom_wars.team import Team
+from pombot.lib.pom_wars.types import Outcome
 from tests.helpers.semantics import assert_not_raises
+
+# For the purposes of `get_random`, these values are simply passed through to
+# the returned `Attack` or `Defend` object.  So they need to exist, but their
+# values are arbitrary.
+DUMMY_USER = object()
+DUMMY_TIMESTAMP = object()
 
 # pylint: disable=protected-access
 
@@ -53,37 +60,49 @@ class TestActionsData(unittest.TestCase):
         average_daily_actions = 1
 
         stories = {
-            "kn_crit_norm": "knight critical normal attack",
-            "kn_crit_heav": "knight critical heavy attack",
-            "kn_norm":      "knight normal attack",
-            "kn_heav":      "knight heavy attack",
-            "kn_def":       "knight defend",
-            "vk_crit_norm": "viking critical normal attack",
-            "vk_crit_heav": "viking critical heavy attack",
-            "vk_norm":      "viking normal attack",
-            "vk_heav":      "viking heavy attack",
-            "vk_def":       "viking defend",
-            "br":           "bribe",
+            "kn_crit_nrm": "knight critical normal attack",
+            "kn_crit_hvy": "knight critical heavy attack",
+            "kn_miss_nrm": "knight missed normal attack",
+            "kn_miss_hvy": "knight missed heavy attack",
+            "kn_nrm":      "knight normal attack",
+            "kn_hvy":      "knight heavy attack",
+            "kn_miss_dfn": "knight missed defend",
+            "kn_dfn":      "knight defend",
+            "vk_crit_nrm": "viking critical normal attack",
+            "vk_crit_hvy": "viking critical heavy attack",
+            "vk_miss_nrm": "viking missed normal attack",
+            "vk_miss_hvy": "viking missed heavy attack",
+            "vk_nrm":      "viking normal attack",
+            "vk_hvy":      "viking heavy attack",
+            "vk_miss_dfn": "viking missed defend",
+            "vk_dfn":      "viking defend",
+            "br":          "bribe",
         }
 
         self.write_actions_xml(textwrap.dedent(f"""\
             <actions>
                 <team name="{Pomwars.KNIGHT_ROLE}">
                     <tier level="{average_daily_actions}">
-                        <normal_attack critical="true">{stories["kn_crit_norm"]}</normal_attack>
-                        <heavy_attack critical="true">{stories["kn_crit_heav"]}</heavy_attack>
-                        <normal_attack>{stories["kn_norm"]}</normal_attack>
-                        <heavy_attack>{stories["kn_heav"]}</heavy_attack>
-                        <defend>{stories["kn_def"]}</defend>
+                        <normal_attack outcome="critical">{stories["kn_crit_nrm"]}</normal_attack>
+                        <heavy_attack outcome="critical">{stories["kn_crit_hvy"]}</heavy_attack>
+                        <normal_attack outcome="missed">{stories["kn_miss_nrm"]}</normal_attack>
+                        <heavy_attack outcome="missed">{stories["kn_miss_hvy"]}</heavy_attack>
+                        <normal_attack>{stories["kn_nrm"]}</normal_attack>
+                        <heavy_attack>{stories["kn_hvy"]}</heavy_attack>
+                        <defend outcome="missed">{stories["kn_miss_dfn"]}</defend>
+                        <defend>{stories["kn_dfn"]}</defend>
                     </tier>
                 </team>
                 <team name="{Pomwars.VIKING_ROLE}">
                     <tier level="{average_daily_actions}">
-                        <normal_attack critical="true">{stories["vk_crit_norm"]}</normal_attack>
-                        <heavy_attack critical="true">{stories["vk_crit_heav"]}</heavy_attack>
-                        <normal_attack>{stories["vk_norm"]}</normal_attack>
-                        <heavy_attack>{stories["vk_heav"]}</heavy_attack>
-                        <defend>{stories["vk_def"]}</defend>
+                        <normal_attack outcome="critical">{stories["vk_crit_nrm"]}</normal_attack>
+                        <heavy_attack outcome="critical">{stories["vk_crit_hvy"]}</heavy_attack>
+                        <normal_attack outcome="missed">{stories["vk_miss_nrm"]}</normal_attack>
+                        <heavy_attack outcome="missed">{stories["vk_miss_hvy"]}</heavy_attack>
+                        <normal_attack>{stories["vk_nrm"]}</normal_attack>
+                        <heavy_attack>{stories["vk_hvy"]}</heavy_attack>
+                        <defend outcome="missed">{stories["vk_miss_dfn"]}</defend>
+                        <defend>{stories["vk_dfn"]}</defend>
                     </tier>
                 </team>
                 <bribe>{stories["br"]}</bribe>
@@ -93,19 +112,29 @@ class TestActionsData(unittest.TestCase):
         with assert_not_raises():
             attacks, defends, bribes = self.instantiate_actions()
 
+        average = {"average_daily_actions": average_daily_actions}
+        user = {"user": DUMMY_USER}
+        timestamp = {"timestamp": DUMMY_TIMESTAMP}
+
         for action, kwargs, expected_story in (
             # pylint: disable=line-too-long
-            (attacks, {"team": Team.KNIGHTS, "average_daily_actions": average_daily_actions, "critical": False, "heavy": False}, stories["kn_norm"]),
-            (attacks, {"team": Team.KNIGHTS, "average_daily_actions": average_daily_actions, "critical": False, "heavy": True},  stories["kn_heav"]),
-            (attacks, {"team": Team.KNIGHTS, "average_daily_actions": average_daily_actions, "critical": True,  "heavy": False}, stories["kn_crit_norm"]),
-            (attacks, {"team": Team.KNIGHTS, "average_daily_actions": average_daily_actions, "critical": True,  "heavy": True},  stories["kn_crit_heav"]),
-            (attacks, {"team": Team.VIKINGS, "average_daily_actions": average_daily_actions, "critical": False, "heavy": False}, stories["vk_norm"]),
-            (attacks, {"team": Team.VIKINGS, "average_daily_actions": average_daily_actions, "critical": False, "heavy": True},  stories["vk_heav"]),
-            (attacks, {"team": Team.VIKINGS, "average_daily_actions": average_daily_actions, "critical": True,  "heavy": False}, stories["vk_crit_norm"]),
-            (attacks, {"team": Team.VIKINGS, "average_daily_actions": average_daily_actions, "critical": True,  "heavy": True},  stories["vk_crit_heav"]),
+            (attacks, {**timestamp, "team": Team.KNIGHTS, **average, "outcome": Outcome.REGULAR,  "heavy": False}, stories["kn_nrm"]),
+            (attacks, {**timestamp, "team": Team.KNIGHTS, **average, "outcome": Outcome.REGULAR,  "heavy": True},  stories["kn_hvy"]),
+            (attacks, {**timestamp, "team": Team.KNIGHTS, **average, "outcome": Outcome.CRITICAL, "heavy": False}, stories["kn_crit_nrm"]),
+            (attacks, {**timestamp, "team": Team.KNIGHTS, **average, "outcome": Outcome.CRITICAL, "heavy": True},  stories["kn_crit_hvy"]),
+            (attacks, {**timestamp, "team": Team.KNIGHTS, **average, "outcome": Outcome.MISSED,   "heavy": False}, stories["kn_miss_nrm"]),
+            (attacks, {**timestamp, "team": Team.KNIGHTS, **average, "outcome": Outcome.MISSED,   "heavy": True},  stories["kn_miss_hvy"]),
+            (attacks, {**timestamp, "team": Team.VIKINGS, **average, "outcome": Outcome.REGULAR,  "heavy": False}, stories["vk_nrm"]),
+            (attacks, {**timestamp, "team": Team.VIKINGS, **average, "outcome": Outcome.REGULAR,  "heavy": True},  stories["vk_hvy"]),
+            (attacks, {**timestamp, "team": Team.VIKINGS, **average, "outcome": Outcome.CRITICAL, "heavy": False}, stories["vk_crit_nrm"]),
+            (attacks, {**timestamp, "team": Team.VIKINGS, **average, "outcome": Outcome.CRITICAL, "heavy": True},  stories["vk_crit_hvy"]),
+            (attacks, {**timestamp, "team": Team.VIKINGS, **average, "outcome": Outcome.MISSED,   "heavy": False}, stories["vk_miss_nrm"]),
+            (attacks, {**timestamp, "team": Team.VIKINGS, **average, "outcome": Outcome.MISSED,   "heavy": True},  stories["vk_miss_hvy"]),
 
-            (defends, {"team": Team.KNIGHTS, "average_daily_actions": average_daily_actions}, stories["kn_def"]),
-            (defends, {"team": Team.VIKINGS, "average_daily_actions": average_daily_actions}, stories["vk_def"]),
+            (defends, {**user, "team": Team.KNIGHTS, **average, "outcome": Outcome.REGULAR}, stories["kn_dfn"]),
+            (defends, {**user, "team": Team.KNIGHTS, **average, "outcome": Outcome.MISSED},  stories["kn_miss_dfn"]),
+            (defends, {**user, "team": Team.VIKINGS, **average, "outcome": Outcome.REGULAR}, stories["vk_dfn"]),
+            (defends, {**user, "team": Team.VIKINGS, **average, "outcome": Outcome.MISSED},  stories["vk_miss_dfn"]),
 
             (bribes,  {}, stories["br"])
             # pylint: enable=line-too-long
@@ -179,13 +208,17 @@ class TestActionsData(unittest.TestCase):
         with assert_not_raises():
             attacks, defends, _ = self.instantiate_actions()
 
-        average = {"average_daily_actions": average_daily_actions}
-        team = {"team": team_name}
-        team_and_crit = {"critical": False, **team}
+        user = {"user": DUMMY_USER}
+        timestamp = {"timestamp": DUMMY_TIMESTAMP}
+        common_kwargs = {
+            "average_daily_actions": average_daily_actions,
+            "team": team_name,
+            "outcome": Outcome.REGULAR,
+        }
 
-        actual_nrm = attacks.get_random(**average, **team_and_crit, heavy=False)
-        actual_hvy = attacks.get_random(**average, **team_and_crit, heavy=True)
-        actual_dfn = defends.get_random(**average, **team)
+        actual_nrm = attacks.get_random(**common_kwargs, **timestamp, heavy=False)
+        actual_hvy = attacks.get_random(**common_kwargs, **timestamp, heavy=True)
+        actual_dfn = defends.get_random(**common_kwargs, **user)
 
         self.assertEqual(tiered_stories[expected_tier]["nrm"], actual_nrm._story)
         self.assertEqual(tiered_stories[expected_tier]["hvy"], actual_hvy._story)

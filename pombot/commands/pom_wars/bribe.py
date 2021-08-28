@@ -3,7 +3,7 @@ from datetime import datetime
 from discord.ext.commands import Context
 
 from pombot.data.pom_wars.actions import Bribes
-from pombot.lib.pom_wars.team import get_user_team
+from pombot.lib.pom_wars.common import get_user_team
 from pombot.lib.storage import Storage
 from pombot.lib.types import ActionType
 
@@ -17,7 +17,7 @@ async def do_bribe(ctx: Context):
         "user":           ctx.author,
         "team":           get_user_team(ctx.author).value,
         "action_type":    ActionType.BRIBE,
-        "was_successful": True,
+        "was_successful": False,
         "was_critical":   None,
         "items_dropped":  "",
         "damage":         None,

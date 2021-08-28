@@ -166,11 +166,19 @@ class _Response:
         @raises TypeError if is_embed_message False and _func is None.
         @return The Discord message delivered.
         """
-        args = self.args or tuple()
-        kwargs = self.kwargs or dict()
+        args = self.args or ()
+        kwargs = self.kwargs or {}
 
         if self.is_embed_message:
-            return await send_embed_message(*args, **kwargs)
+            # pylint-2.10.x is smart enough to find the signature of the
+            # function, but not smart enough to search kwargs. This seems
+            # like a useful lint anyway, so appease it.
+            return await send_embed_message(
+                *args,
+                title=kwargs.pop("title"),
+                description=kwargs.pop("description"),
+                **kwargs,
+            )
 
         return await self._func(*args, **kwargs)
 

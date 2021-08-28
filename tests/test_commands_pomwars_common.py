@@ -14,25 +14,7 @@ from pombot.lib.tiny_tools import flatten
 from pombot.lib.types import ActionType, Action
 from pombot.lib.pom_wars.team import Team
 from tests.helpers import mock_discord
-
-
-class Environment:
-    """Closure for saving and loading environment variables."""
-    @classmethod
-    def preserve(cls):
-        """Store config variables to be reset after the tests."""
-        cls.averaging_period = Pomwars.AVERAGING_PERIOD_DAYS
-        cls.consider_only_successful = Pomwars.CONSIDER_ONLY_SUCCESSFUL_ACTIONS
-        cls.forgiven_days = Pomwars.MAX_FORGIVEN_DAYS
-        cls.shadow_cap_limit = Pomwars.SHADOW_CAP_LIMIT_PER_DAY
-
-    @classmethod
-    def restore(cls):
-        """Restore saved config variables."""
-        Pomwars.AVERAGING_PERIOD_DAYS = cls.averaging_period
-        Pomwars.CONSIDER_ONLY_SUCCESSFUL_ACTIONS = cls.consider_only_successful
-        Pomwars.MAX_FORGIVEN_DAYS = cls.forgiven_days
-        Pomwars.SHADOW_CAP_LIMIT_PER_DAY = cls.shadow_cap_limit
+from tests.helpers.environment import Environment
 
 
 class TestAveragingActions(IsolatedAsyncioTestCase):
@@ -49,6 +31,10 @@ class TestAveragingActions(IsolatedAsyncioTestCase):
 
         self.ctx = mock_discord.MockContext()
         self.action_id = itertools.count(start=1000)
+
+        patcher = patch.object(Storage, "get_actions")
+        patcher.start()
+        self.addAsyncCleanup(patcher.stop)
 
     @classmethod
     def tearDownClass(cls):
@@ -154,7 +140,6 @@ class TestAveragingActions(IsolatedAsyncioTestCase):
         ("first poms",   10,       20,      ( 0,  0,  0,  0,  0,  0, 17),   2,        ),  # Tier 1
         ("lagged poms",  10,       20,      (10,  0,  0,  0,  0,  0, 10),   4,        ),  # Tier 2
     ])
-    @patch.object(Storage, "get_actions")
     async def test_get_average_poms_with_varying_successes(
         self,
         test_name,
@@ -162,7 +147,6 @@ class TestAveragingActions(IsolatedAsyncioTestCase):
         max_successful_per_day,
         daily_poms,
         expected_average,
-        mock_get_actions,
     ):
         """Test get_average_poms with a variety of configurations."""
         Pomwars.AVERAGING_PERIOD_DAYS = len(daily_poms)
@@ -190,8 +174,7 @@ class TestAveragingActions(IsolatedAsyncioTestCase):
         if Pomwars.CONSIDER_ONLY_SUCCESSFUL_ACTIONS:
             actions_from_db = [a for a in actions_from_db if a.was_successful]
 
-        Storage.get_actions = mock_get_actions
-        mock_get_actions.return_value = actions_from_db
+        Storage.get_actions.return_value = actions_from_db
 
         actual_average = await get_average_poms(
             user=self.ctx.author,
@@ -200,11 +183,7 @@ class TestAveragingActions(IsolatedAsyncioTestCase):
 
         self.assertEqual(expected_average, actual_average, f"{test_name=}")
 
-    @patch.object(Storage, "get_actions")
-    async def test_get_average_poms_does_not_consider_bribes(
-        self,
-        mock_get_actions,
-    ):
+    async def test_get_average_poms_does_not_consider_bribes(self):
         """Test get_average_poms only averages attacks and defends."""
         Pomwars.AVERAGING_PERIOD_DAYS = 1
         Pomwars.MAX_FORGIVEN_DAYS = 0
@@ -220,8 +199,7 @@ class TestAveragingActions(IsolatedAsyncioTestCase):
                 )))
         ]
 
-        Storage.get_actions = mock_get_actions
-        mock_get_actions.return_value = actions_from_db
+        Storage.get_actions.return_value = actions_from_db
 
         actual_average = await get_average_poms(
             user=self.ctx.author,

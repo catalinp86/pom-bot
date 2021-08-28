@@ -15,7 +15,7 @@ class TestActionSuccessRates(unittest.IsolatedAsyncioTestCase):
     """Generic tests for _is_attack_successful."""
     def setUp(self) -> None:
         """Set configuration objects for tests."""
-        Debug.BENCHMARK_POMWAR_ATTACK = False
+        Debug.POMWARS_ACTIONS_ALWAYS_SUCCEED = False
         return super().setUp()
 
     @patch("pombot.lib.storage.Storage.get_actions")
@@ -26,7 +26,7 @@ class TestActionSuccessRates(unittest.IsolatedAsyncioTestCase):
         get_actions_mock: Mock,
     ):
         """Generically test is_action_successful when doing a normal attack."""
-        dice_rolls_and_expected_outcomes = {
+        dice_rolls_and_expected_results = {
             1: [(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0),
                 (TRU, TRU, TRU, TRU, TRU, TRU, TRU, TRU, TRU, TRU)],
             2: [(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0),
@@ -57,17 +57,17 @@ class TestActionSuccessRates(unittest.IsolatedAsyncioTestCase):
         timestamp = datetime.now()
         actions = []
 
-        for pom_number, settings in dice_rolls_and_expected_outcomes.items():
+        for pom_number, settings in dice_rolls_and_expected_results.items():
             actions.append(pom_number)
             get_actions_mock.return_value = actions
             print(f"len(actions) = {len(actions)}")
 
-            for dice_roll, expected_outcome in zip(*settings):
+            for dice_roll, expected_result in zip(*settings):
                 random_mock.return_value = dice_roll
-                actual_outcome = await is_action_successful(
+                actual_result = await is_action_successful(
                     user, timestamp, is_heavy_attack)
 
-                self.assertEqual(expected_outcome, actual_outcome,
+                self.assertEqual(expected_result, actual_result,
                     f"pom_number: {pom_number}, dice_roll: {dice_roll}")
 
     @patch("pombot.lib.storage.Storage.get_actions")
@@ -106,7 +106,7 @@ class TestActionSuccessRates(unittest.IsolatedAsyncioTestCase):
             defend_level=1,
         )
 
-        dice_rolls_and_expected_outcomes = {
+        dice_rolls_and_expected_results = {
             MockPom(1):  [(0.1, 0.2, 0.3),
                           (TRU, TRU, FLS)],
             MockPom(2):  [(0.1, 0.2, 0.3),
@@ -137,18 +137,18 @@ class TestActionSuccessRates(unittest.IsolatedAsyncioTestCase):
         timestamp = datetime.now()
         actions = []
 
-        for pom_number, settings in dice_rolls_and_expected_outcomes.items():
+        for pom_number, settings in dice_rolls_and_expected_results.items():
             actions.append(pom_number)
             get_actions_mock.return_value = actions
             print(f"len(actions) = {len(actions)}")
 
-            for dice_roll, expected_outcome in zip(*settings):
+            for dice_roll, expected_result in zip(*settings):
                 random_mock.return_value = dice_roll
-                actual_outcome = await is_action_successful(
+                actual_result = await is_action_successful(
                     user, timestamp, is_heavy_attack)
 
                 self.assertEqual(
-                    expected_outcome, actual_outcome,
+                    expected_result, actual_result,
                     f"pom_number: {pom_number}, dice_roll: {dice_roll}")
 
     @patch("pombot.lib.storage.Storage.get_actions")
@@ -159,7 +159,7 @@ class TestActionSuccessRates(unittest.IsolatedAsyncioTestCase):
         get_actions_mock: Mock,
     ):
         """Generically test is_action_successful when doing a defend."""
-        dice_rolls_and_expected_outcomes = {
+        dice_rolls_and_expected_results = {
             1: [(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0),
                 (TRU, TRU, TRU, TRU, TRU, TRU, TRU, TRU, TRU, TRU)],
             2: [(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0),
@@ -190,18 +190,18 @@ class TestActionSuccessRates(unittest.IsolatedAsyncioTestCase):
         timestamp = datetime.now()
         actions = []
 
-        for pom_number, settings in dice_rolls_and_expected_outcomes.items():
+        for pom_number, settings in dice_rolls_and_expected_results.items():
             actions.append(pom_number)
             get_actions_mock.return_value = actions
             print(f"len(actions) = {len(actions)}")
 
-            for dice_roll, expected_outcome in zip(*settings):
+            for dice_roll, expected_result in zip(*settings):
                 random_mock.return_value = dice_roll
-                actual_outcome = await is_action_successful(
+                actual_result = await is_action_successful(
                     user, timestamp, is_heavy_attack)
 
                 self.assertEqual(
-                    expected_outcome, actual_outcome,
+                    expected_result, actual_result,
                     f"pom_number: {pom_number}, dice_roll: {dice_roll}")
 
 

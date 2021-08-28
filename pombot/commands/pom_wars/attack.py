@@ -1,5 +1,6 @@
 import random
-from datetime import datetime, timedelta
+from datetime import datetime
+from functools import partial
 
 from discord.ext.commands import Context
 
@@ -9,28 +10,12 @@ from pombot.data.pom_wars.actions import Attacks
 from pombot.lib.errors import DescriptionTooLongError
 from pombot.lib.messages import send_embed_message
 from pombot.lib.pom_wars.action_chances import is_action_successful
-from pombot.lib.pom_wars.common import check_user_add_pom, get_average_poms
-from pombot.lib.pom_wars.team import get_user_team
+from pombot.lib.pom_wars.common import (check_user_add_pom, get_average_poms,
+                                        get_user_team)
+from pombot.lib.pom_wars.types import Outcome
 from pombot.lib.storage import Storage
-from pombot.lib.types import ActionType, DateRange
+from pombot.lib.types import ActionType
 from pombot.state import State
-
-
-async def _get_defensive_multiplier(team: str, timestamp: datetime) -> float:
-    defend_actions = await Storage.get_actions(
-        action_type=ActionType.DEFEND,
-        team=team,
-        was_successful=True,
-        date_range=DateRange(
-            timestamp - timedelta(minutes=Pomwars.DEFEND_DURATION_MINUTES),
-            timestamp,
-        ),
-    )
-    defenders = await Storage.get_users_by_id([a.user_id for a in defend_actions])
-    multipliers = [Pomwars.DEFEND_LEVEL_MULTIPLIERS[d.defend_level] for d in defenders]
-    multiplier = min([sum(multipliers), Pomwars.MAXIMUM_TEAM_DEFENCE])
-
-    return 1 - multiplier
 
 
 async def do_attack(ctx: Context, *args):
@@ -44,9 +29,10 @@ async def do_attack(ctx: Context, *args):
     except (war_crimes.UserDoesNotExistError, DescriptionTooLongError):
         return
 
+    team = get_user_team(ctx.author)
     action = {
         "user":           ctx.author,
-        "team":           get_user_team(ctx.author).value,
+        "team":           team.value,
         "action_type":    ActionType.HEAVY_ATTACK
                               if heavy_attack else ActionType.NORMAL_ATTACK,
         "was_successful": False,
@@ -56,34 +42,31 @@ async def do_attack(ctx: Context, *args):
         "time_set":       timestamp,
     }
 
-    if not await is_action_successful(ctx.author, timestamp, heavy_attack):
-        emote = random.choice(["¯\\_(ツ)_/¯", "(╯°□°）╯︵ ┻━┻"])
-        await Storage.add_pom_war_action(**action)
-        await ctx.send(f"<@{ctx.author.id}>'s attack missed! {emote}")
-        return
-
-    action["was_successful"] = True
-    action["was_critical"] = random.random() <= Pomwars.BASE_CHANCE_FOR_CRITICAL
-    await ctx.message.add_reaction(Reactions.BOOM)
-
-    attack = Attacks.get_random(
-        team=action["team"],
+    get_random_attack = partial(Attacks.get_random, **dict(
+        timestamp=timestamp,
+        team=team,
         average_daily_actions=await get_average_poms(ctx.author, timestamp),
-        critical=action["was_critical"],
         heavy=heavy_attack,
-    )
+    ))
 
-    defensive_multiplier = await _get_defensive_multiplier(
-        team=(~get_user_team(ctx.author)).value,
-        timestamp=timestamp)
+    if await is_action_successful(ctx.author, timestamp, heavy_attack):
+        action["was_successful"] = True
+        await ctx.message.add_reaction(Reactions.BOOM)
 
-    action["damage"] = attack.damage * defensive_multiplier
+        action["was_critical"] = random.random() <= Pomwars.BASE_CHANCE_FOR_CRITICAL
+        attack = get_random_attack(outcome=Outcome.CRITICAL if
+                                   action["was_critical"] else Outcome.REGULAR)
+
+        action["damage"] = await attack.damage
+    else:
+        attack = get_random_attack(outcome=Outcome.MISSED)
+
     await Storage.add_pom_war_action(**action)
 
     await send_embed_message(
         None,
-        title=attack.get_title(ctx.author),
-        description=attack.get_message(action["damage"]),
+        title=attack.title,
+        description=await attack.message,
         icon_url=None,
         colour=attack.colour,
         _func=ctx.reply,
@@ -91,5 +74,5 @@ async def do_attack(ctx: Context, *args):
 
     await State.scoreboard.update()
 
-    if Debug.BENCHMARK_POMWAR_ATTACK:
+    if Debug.POMWARS_ACTIONS_ALWAYS_SUCCEED:
         print(f"!attack took: {datetime.now() - timestamp}")

@@ -18,12 +18,33 @@ async def is_action_successful(
     """Considering the time, user choices and previous user actions,
     determine if current attack is successful.
     """
+    if Debug.POMWARS_ACTIONS_ALWAYS_SUCCEED:
+        return True
+
     actions = await Storage.get_actions(
         user=user,
         date_range=daterange_from_timestamp(timestamp),
     )
 
     def _delayed_exponential_drop(num_poms: int):
+        r"""Return the chance of an action succeeding based on the
+        right-hand-side of a normal Gaussian distribution.
+
+                 1.0 |-------------------
+               (100%)|                    \
+        Return       |                      -
+         Value       |                        \
+        (Base        |                          -
+        Chance   0.5 |                            \
+          of    (50%)|                              -
+        Success)     |                                \
+                     |                                  -
+                     |                                    \
+                ~0.0 |                                      ----------------..
+                (~0%)|________________________________________________________
+                      1   2   3   4   5   6   7   8   9   10  11  12  13  14..
+                                    num_poms (ie. len(actions))
+        """
         operand = lambda x: math.pow(math.e, ((-(x - 9)**2) / 2)) / (math.sqrt(2 * math.pi))
 
         probabilities = {
@@ -78,5 +99,4 @@ async def is_action_successful(
     else:
         chance_func = _get_normal_attack_success_chance
 
-    return random.random() <= chance_func(
-        len(actions) if not Debug.BENCHMARK_POMWAR_ATTACK else 1)
+    return random.random() <= chance_func(len(actions))

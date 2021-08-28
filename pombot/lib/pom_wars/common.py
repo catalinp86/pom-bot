@@ -8,6 +8,7 @@ from discord.user import User as DiscordUser
 import pombot.lib.pom_wars.errors as war_crimes
 from pombot.config import Config, Pomwars, Reactions
 from pombot.lib.errors import DescriptionTooLongError
+from pombot.lib.pom_wars.team import Team
 from pombot.lib.storage import Storage
 from pombot.lib.types import ActionType, DateRange, User as BotUser
 
@@ -96,3 +97,21 @@ class _PlaceholderAction:
     """
     timestamp: datetime
     type: ActionType = ActionType.PLACEHOLDER
+
+
+def get_user_team(user: BotUser) -> Team:
+    """Find a Discord user's team based on their roles.
+
+    @param user The Discord user object (eg. ctx.author).
+    @raises InvalidNumberOfRolesError when not on a team or on multiple teams.
+    @return Team object.
+    """
+    team_roles = [
+        role for role in user.roles
+        if role.name in [Pomwars.KNIGHT_ROLE, Pomwars.VIKING_ROLE]
+    ]
+
+    if len(team_roles) != 1:
+        raise war_crimes.InvalidNumberOfRolesError()
+
+    return Team(team_roles[0].name)
